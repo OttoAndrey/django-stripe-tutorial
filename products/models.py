@@ -6,6 +6,8 @@ class Product(models.Model):
 
     # Cents
     price = models.IntegerField(default=0)
+    file = models.FileField(upload_to='products_files/', blank=True, null=True)
+    url = models.URLField()
 
     class Meta:
         verbose_name = 'product'
