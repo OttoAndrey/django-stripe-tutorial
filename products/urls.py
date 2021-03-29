@@ -13,5 +13,10 @@ urlpatterns = [
         views.CreateCheckoutSessionView.as_view(),
         name='create-checkout-session',
     ),
+    path(
+        'create-payment-intent/<pk>/',
+        views.StripeIntentView.as_view(),
+        name='create-payment-intent',
+    ),
     path('webhooks/stripe/', views.stripe_webhook, name='stripe-webhook'),
 ]

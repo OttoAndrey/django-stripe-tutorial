@@ -1,3 +1,5 @@
+import json
+
 import stripe
 from django.conf import settings
 from django.core.mail import send_mail
@@ -21,7 +23,9 @@ def stripe_webhook(request):
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
+            payload,
+            sig_header,
+            endpoint_secret,
         )
     except ValueError as e:
         # Invalid payload
@@ -41,8 +45,31 @@ def stripe_webhook(request):
         send_mail(
             subject="Here is your product",
             message=(
-                f"Thanks for your purchase. "
-                f"Here is the product you ordered."
+                "Thanks for your purchase. "
+                "Here is the product you ordered. "
+                f"The URL is {product.url}"
+            ),
+            recipient_list=[customer_email],
+            from_email="admin@localhost",
+        )
+    elif event['type'] == 'payment_intent.succeeded':
+        print('here')
+        intent = event['data']['object']
+
+        stripe_customer_id = intent['customer']
+        stripe_customer = stripe.Customer.retrieve(stripe_customer_id)
+
+        customer_email = stripe_customer['email']
+        product_id = intent['metadata']['product_id']
+
+        product = Product.objects.get(id=product_id)
+
+        send_mail(
+            subject="Here is your product",
+            message=(
+                "Thanks for your purchase. "
+                "Here is the product you ordered. "
+                f"The URL is {product.url}"
             ),
             recipient_list=[customer_email],
             from_email="admin@localhost",
@@ -103,3 +130,23 @@ class CreateCheckoutSessionView(View):
         })
 
 
+class StripeIntentView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            print(request.body)
+            customer_email = json.loads(request.body)['email']
+            customer = stripe.Customer.create(email=customer_email)
+            product_id = self.kwargs['pk']
+            product = Product.objects.get(id=product_id)
+            intent = stripe.PaymentIntent.create(
+                amount=product.price,
+                currency='usd',
+                customer=customer['id'],
+                metadata={'product_id': product.id},
+            )
+
+            return JsonResponse({
+                'clientSecret': intent['client_secret']
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
