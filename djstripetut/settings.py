@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 from environs import Env
 env = Env()
@@ -122,6 +122,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
 
 STRIPE_PUBLIC_KEY = env.str('STRIPE_PUBLIC_KEY', 'not-secret')
 STRIPE_SECRET_KEY = env.str('STRIPE_SECRET_KEY', 'not-secret')
